@@ -34,6 +34,7 @@ class _Lab4AppState extends State<Lab4App> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false, // Tắt dải băng "DEBUG" ở góc trên cùng bên phải
       title: 'Lab 4 - Flutter UI Fundamentals',
       // Cấu hình giao diện Light Mode
       theme: ThemeData(
