@@ -66,7 +66,7 @@ class _InputControlsDemoState extends State<InputControlsDemo> {
             // --- SWITCH ---
             const Text('2. Switch:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             SwitchListTile(
-              title: const Text('Chế độ ban đêm (Night Mode)'),
+              title: const Text('Bật thông báo (Notifications)'),
               value: _switchValue, // Liên kết với biến trạng thái
               onChanged: (bool value) {
                 setState(() {
