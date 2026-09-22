@@ -1,30 +1,164 @@
 import 'package:flutter/material.dart';
 
-class DebugFixDemo extends StatefulWidget {
+class DebugFixDemo extends StatelessWidget {
   const DebugFixDemo({super.key});
 
   @override
-  State<DebugFixDemo> createState() => _DebugFixDemoState();
+  Widget build(BuildContext context) {
+    // Sử dụng TabBar để tách riêng các bài sửa lỗi, giúp tránh xung đột UI
+    // (VD: Expanded không thể nằm trong SingleChildScrollView)
+    return DefaultTabController(
+      length: 4,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Bài 5: Debug & Fix UI'),
+          backgroundColor: Colors.redAccent,
+          bottom: const TabBar(
+            isScrollable: true,
+            tabs: [
+              Tab(text: '1. Expanded'),
+              Tab(text: '2. Overflow'),
+              Tab(text: '3. setState'),
+              Tab(text: '4. Context'),
+            ],
+          ),
+        ),
+        body: const TabBarView(
+          children: [
+            _FixExpandedDemo(),
+            _FixOverflowDemo(),
+            _FixStateDemo(),
+            _FixContextDemo(),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _DebugFixDemoState extends State<DebugFixDemo> {
-  // LỖI 3 (Đã sửa): Lỗi State không cập nhật.
-  // Nguyên nhân cũ: Biến counter thay đổi nhưng UI không vẽ lại vì thiếu setState().
-  // Cách sửa: Bọc phần gán giá trị biến vào bên trong hàm setState().
+// ==========================================
+// 1. Fix ListView inside Column using Expanded
+// ==========================================
+class _FixExpandedDemo extends StatelessWidget {
+  const _FixExpandedDemo();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text(
+            'Lỗi cũ: ListView đặt trực tiếp trong Column bị lỗi "unbounded height".\n'
+            'Cách sửa: Dùng widget Expanded bọc ListView lại.',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+          ),
+        ),
+        // GOAL 5.1: Fix ListView inside Column using Expanded
+        Expanded(
+          child: ListView.builder(
+            itemCount: 20,
+            itemBuilder: (context, index) {
+              return ListTile(
+                leading: const Icon(Icons.check_circle),
+                title: Text('Mục danh sách thứ ${index + 1}'),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ==========================================
+// 2. Fix overflow in small screens using SingleChildScrollView
+// ==========================================
+class _FixOverflowDemo extends StatelessWidget {
+  const _FixOverflowDemo();
+
+  @override
+  Widget build(BuildContext context) {
+    // GOAL 5.2: Fix overflow in small screens using SingleChildScrollView
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text(
+              'Lỗi cũ: Nội dung vượt quá màn hình gây ra dải sọc vàng đen cảnh báo.\n'
+              'Cách sửa: Bọc Column bằng SingleChildScrollView.',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+            ),
+          ),
+          Container(height: 200, color: Colors.blue[100], child: const Center(child: Text('Khối 1 (200px)'))),
+          Container(height: 200, color: Colors.green[100], child: const Center(child: Text('Khối 2 (200px)'))),
+          Container(height: 200, color: Colors.orange[100], child: const Center(child: Text('Khối 3 (200px)'))),
+          Container(height: 200, color: Colors.purple[100], child: const Center(child: Text('Khối 4 (200px) - Đã có thể cuộn xuống'))),
+        ],
+      ),
+    );
+  }
+}
+
+// ==========================================
+// 3. Fix state update issue by adding setState()
+// ==========================================
+class _FixStateDemo extends StatefulWidget {
+  const _FixStateDemo();
+
+  @override
+  State<_FixStateDemo> createState() => _FixStateDemoState();
+}
+
+class _FixStateDemoState extends State<_FixStateDemo> {
   int _counter = 0;
 
   void _incrementCounter() {
+    // GOAL 5.3: Fix state update issue by adding setState()
     setState(() {
       _counter++;
     });
   }
 
-  // LỖI 4 (Đã sửa): Lỗi DatePicker BuildContext.
-  // Nguyên nhân cũ: Gọi showDatePicker ở ngoài hàm build hoặc dùng sai context không chứa Scaffold/Navigator.
-  // Cách sửa: Truyền đúng biến 'context' từ hàm build hoặc widget con vào.
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text(
+              'Lỗi cũ: Biến thay đổi nhưng UI không cập nhật.\n'
+              'Cách sửa: Gọi setState() khi thay đổi biến.',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          Text('Số lần bấm: $_counter', style: const TextStyle(fontSize: 24)),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: _incrementCounter,
+            child: const Text('Tăng +1'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ==========================================
+// 4. Fix DatePicker build context errors
+// ==========================================
+class _FixContextDemo extends StatelessWidget {
+  const _FixContextDemo();
+
+  // GOAL 5.4: Fix DatePicker build context errors by calling from valid widget tree
   Future<void> _showDatePicker(BuildContext context) async {
     await showDatePicker(
-      context: context,
+      context: context, // Truyền đúng context từ hàm build (nằm trong Scaffold)
       initialDate: DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
@@ -33,87 +167,24 @@ class _DebugFixDemoState extends State<DebugFixDemo> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Bài 5: Debug & Fix UI'),
-        backgroundColor: Colors.redAccent,
-      ),
-      // LỖI 2 (Đã sửa): Lỗi Overflow (Vượt quá màn hình) khi nội dung quá dài.
-      // Nguyên nhân cũ: Chỉ dùng Column, nếu nội dung dài hơn chiều cao màn hình sẽ xuất hiện dải sọc vàng đen cảnh báo lỗi "Bottom overflowed...".
-      // Cách sửa: Bọc Column bằng SingleChildScrollView để cho phép cuộn nội dung.
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- DEMO FIX STATE ---
-            const Text(
-              '1. Sửa lỗi cập nhật State (setState)',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text(
+              'Lỗi cũ: Lỗi "No MaterialLocalizations found" khi gọi hàm Picker ở ngoài hoặc dùng sai context.\n'
+              'Cách sửa: Truyền BuildContext hợp lệ từ trong cây Widget.',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+              textAlign: TextAlign.center,
             ),
-            Row(
-              children: [
-                Text('Số lần bấm: $_counter', style: const TextStyle(fontSize: 16)),
-                const SizedBox(width: 20),
-                ElevatedButton(
-                  onPressed: _incrementCounter,
-                  child: const Text('Tăng +1'),
-                ),
-              ],
-            ),
-            const Divider(height: 30),
-
-            // --- DEMO FIX CONTEXT DATEPICKER ---
-            const Text(
-              '2. Sửa lỗi Context khi gọi DatePicker',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            ElevatedButton(
-              onPressed: () => _showDatePicker(context), // context này hợp lệ vì nằm trong cây widget
-              child: const Text('Mở Lịch (DatePicker)'),
-            ),
-            const Divider(height: 30),
-
-            // --- DEMO FIX LISTVIEW INSIDE COLUMN ---
-            const Text(
-              '3. Sửa lỗi ListView bên trong Column',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const Text(
-              'Nguyên nhân cũ: ListView.builder cần biết chiều cao cụ thể, nhưng Column thì chiều cao vô hạn. Điều này gây lỗi sập UI (Vertical viewport was given unbounded height).',
-              style: TextStyle(color: Colors.red),
-            ),
-            const Text(
-              'Cách sửa: Dùng ListView(shrinkWrap: true, physics: NeverScrollableScrollPhysics()) HOẶC bọc ListView vào Expanded/SizedBox.',
-              style: TextStyle(color: Colors.green),
-            ),
-            const SizedBox(height: 10),
-            
-            // LỖI 1 (Đã sửa): ListView inside Column.
-            // Do chúng ta đang bọc toàn bộ bằng SingleChildScrollView ở ngoài cùng, nên ở đây ta KHÔNG DÙNG Expanded (sẽ gây lỗi vì Expanded đòi chiếm chỗ trống còn lại, nhưng SingleChildScrollView thì có chiều cao vô cực).
-            // Thay vào đó, trong trường hợp này ta dùng shrinkWrap: true để ListView chỉ lấy chiều cao vừa đủ cho danh sách của nó, và tắt cuộn (physics: NeverScrollableScrollPhysics()) để nhường quyền cuộn cho SingleChildScrollView.
-            // (Nếu không có SingleChildScrollView ở ngoài, ta sẽ dùng Expanded bọc ListView).
-            Container(
-              decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
-              child: ListView.builder(
-                shrinkWrap: true, // Ép ListView thu lại vừa bằng nội dung bên trong
-                physics: const NeverScrollableScrollPhysics(), // Tắt cuộn của ListView (để cuộn bằng SingleChildScrollView bên ngoài)
-                itemCount: 5,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    leading: const Icon(Icons.check_circle, color: Colors.green),
-                    title: Text('Mục danh sách thứ ${index + 1}'),
-                  );
-                },
-              ),
-            ),
-            
-            const SizedBox(height: 30),
-            const Text('Phần nội dung dài bên dưới để thử nghiệm cuộn (Tránh Overflow)'),
-            Container(height: 200, color: Colors.blue[100]), // Tạo khối màu lớn để ép màn hình phải cuộn
-            Container(height: 200, color: Colors.green[100]),
-          ],
-        ),
+          ),
+          ElevatedButton(
+            onPressed: () => _showDatePicker(context),
+            child: const Text('Mở DatePicker'),
+          ),
+        ],
       ),
     );
   }
